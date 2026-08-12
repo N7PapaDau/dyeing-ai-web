@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dyeing AI Web V1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div>
+    <h1>🤖 DYEING AI</h1>
+    <p>Quality Case Collection — V1</p>
+  </div>
+  <nav>
+    <button class="nav active" data-page="new">➕ Ghi nhận Case</button>
+    <button class="nav" data-page="cases">📋 Danh sách Case</button>
+    <button class="nav" data-page="search">🔎 Tìm kiếm</button>
+  </nav>
+</header>
+
+<main>
+<section id="new" class="page active">
+  <div class="card">
+    <h2>👷 Ghi nhận mẻ / vấn đề</h2>
+    <p class="hint">Công nhân chỉ cần ghi nhận sự việc. Chưa cần xác định nguyên nhân gốc.</p>
+    <form id="caseForm">
+      <div class="grid">
+        <label>Mã sản phẩm*<input id="product" required placeholder="Ví dụ: 20726"></label>
+        <label>Batch*<input id="batch" required placeholder="Ví dụ: 26209997"></label>
+        <label>Máy*<input id="machine" required placeholder="Ví dụ: Fong's 501"></label>
+        <label>Ngày*<input id="date" type="date" required></label>
+        <label class="full">Vấn đề*
+          <select id="problem" required>
+            <option value="">-- Chọn vấn đề --</option>
+            <option>Uneven Dyeing</option><option>Color Wrong / Sai màu</option>
+            <option>PVA-out</option><option>Cotton Lint / Bụi bông</option>
+            <option>Moisture / Độ ẩm</option><option>Other / Khác</option>
+          </select>
+        </label>
+        <label class="full">Mô tả ngắn*
+          <textarea id="description" required placeholder="Mô tả hiện tượng quan sát được..."></textarea>
+        </label>
+        <label class="full">Hình ảnh
+          <input id="photo" type="file" accept="image/*" multiple>
+        </label>
+      </div>
+      <button class="primary" type="submit">💾 Lưu Case</button>
+      <div id="saveMsg"></div>
+    </form>
+  </div>
+</section>
+
+<section id="cases" class="page">
+  <div class="card">
+    <div class="row"><div><h2>📋 Case đã ghi nhận</h2><p class="hint">V1 dùng Supabase nếu đã cấu hình; nếu chưa, có thể chạy Demo bằng dữ liệu trình duyệt.</p></div>
+    <button onclick="loadCases()">↻ Làm mới</button></div>
+    <div id="caseList"></div>
+  </div>
+</section>
+
+<section id="search" class="page">
+  <div class="card">
+    <h2>🔎 Tìm kiếm lịch sử</h2>
+    <div class="searchbar"><input id="searchBox" placeholder="Ví dụ: 20726, Uneven Dyeing, 26209997..."><button onclick="runSearch()">Tìm</button></div>
+    <div id="searchResult"></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <span>Dyeing AI Web V1 • Worker → Technician → AI</span>
+  <span id="mode"></span>
+</footer>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
