@@ -16,11 +16,28 @@ document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>{
 function localGet(){try{return JSON.parse(localStorage.getItem(DEMO_KEY)||"[]")}catch{return[]}}
 function localSave(x){localStorage.setItem(DEMO_KEY,JSON.stringify(x))}
 
-async function supa(path, options={}){
-  const r=await fetch(cfg.SUPABASE_URL+"/rest/v1/"+path,{
-    ...options, headers:{"apikey":cfg.SUPABASE_ANON_KEY,"Authorization":"Bearer "+cfg.SUPABASE_ANON_KEY,"Content-Type":"application/json","Prefer":"return=representation",...(options.headers||{})}
-  });
-  if(!r.ok) throw new Error(await r.text()); return r.status===204?[]:r.json();
+async function supa(path, options = {}) {
+  const headers = {
+    "apikey": cfg.SUPABASE_ANON_KEY,
+    "Content-Type": "application/json",
+    "Prefer": "return=representation",
+    ...(options.headers || {})
+  };
+
+  const r = await fetch(
+    cfg.SUPABASE_URL + "/rest/v1/" + path,
+    {
+      ...options,
+      headers
+    }
+  );
+
+  if (!r.ok) {
+    const text = await r.text();
+    throw new Error(`Supabase ${r.status}: ${text}`);
+  }
+
+  return r.status === 204 ? [] : await r.json();
 }
 
 document.getElementById("caseForm").onsubmit=async e=>{
