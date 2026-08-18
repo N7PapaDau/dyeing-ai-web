@@ -1042,62 +1042,225 @@ if (effective && !confirmBatch) {
 
 async function runSearch() {
 
-  const query =
-    document.getElementById(
-      "searchBox"
-    ).value
+  const input =
+    document.getElementById("searchBox")
+      .value
       .trim()
       .toLowerCase();
 
+  const resultBox =
+    document.getElementById("searchResult");
+
+  if (!input) {
+    resultBox.innerHTML =
+      '<p class="hint">Vui lòng nhập Product, Problem hoặc Batch để tìm.</p>';
+    return;
+  }
 
   try {
+
+    // ==========================================
+    // LOAD CASE DATA
+    // ==========================================
 
     if (!allCases.length) {
 
       if (isSupabase) {
 
-        allCases =
-          await supa(
-            "dyeing_cases?select=*&order=created_at.desc"
-          );
+        allCases = await supa(
+          "dyeing_cases?select=*&order=created_at.desc"
+        );
 
       } else {
 
-        allCases =
-          localGet();
+        allCases = localGet();
 
       }
 
     }
 
 
-    const rows =
-      allCases.filter(x =>
+    // ==========================================
+    // TÁCH TỪ KHÓA NGƯỜI DÙNG NHẬP
+    // ==========================================
 
-        Object
-          .values(x)
-          .join(" ")
-          .toLowerCase()
-          .includes(query)
-
-      );
+    const keywords =
+      input
+        .split(/\s+/)
+        .filter(Boolean);
 
 
-    render(
-      rows,
-      document.getElementById(
-        "searchResult"
-      )
-    );
+    // ==========================================
+    // TÌM CASE
+    //
+    // Ưu tiên:
+    // 1. Product
+    // 2. Problem
+    // 3. Batch
+    //
+    // Không tìm toàn bộ Object.values()
+    // ==========================================
+
+    const rows = allCases.filter(caseData => {
+
+      const product =
+        String(
+          caseData.product_code || ""
+        ).toLowerCase();
+
+      const problem =
+        String(
+          caseData.problem || ""
+        ).toLowerCase();
+
+      const batch =
+        String(
+          caseData.batch_no || ""
+        ).toLowerCase();
+
+      const machine =
+        String(
+          caseData.machine || ""
+        ).toLowerCase();
+
+
+      /*
+       * Mỗi từ khóa phải xuất hiện
+       * trong các trường dữ liệu chính.
+       */
+
+      return keywords.every(keyword => {
+
+        return (
+          product.includes(keyword) ||
+          problem.includes(keyword) ||
+          batch.includes(keyword) ||
+          machine.includes(keyword)
+        );
+
+      });
+
+    });
+
+
+    // ==========================================
+    // KHÔNG CÓ KẾT QUẢ
+    // ==========================================
+
+    if (!rows.length) {
+
+      resultBox.innerHTML = `
+
+        <div class="error">
+
+          ❌ Không tìm thấy Case phù hợp.
+
+          <p>
+            Thử tìm theo:
+            <b>Product</b>,
+            <b>Problem</b>
+            hoặc
+            <b>Batch</b>.
+          </p>
+
+        </div>
+
+      `;
+
+      return;
+
+    }
+
+
+    // ==========================================
+    // HIỂN THỊ KẾT QUẢ
+    // ==========================================
+
+    resultBox.innerHTML = `
+
+      <div class="hint">
+
+        Tìm thấy
+        <b>${rows.length}</b>
+        Case phù hợp.
+
+      </div>
+
+      ${rows.map(x => `
+
+        <article class="case">
+
+          <h3>
+            ${esc(x.case_id)}
+            —
+            ${esc(x.product_code)}
+          </h3>
+
+
+          <span class="tag">
+            Batch:
+            ${esc(x.batch_no)}
+          </span>
+
+
+          <span class="tag">
+            Máy:
+            ${esc(x.machine)}
+          </span>
+
+
+          <span class="tag">
+            ${esc(x.problem)}
+          </span>
+
+
+          <p>
+
+            <b>Hiện tượng:</b>
+
+            ${esc(x.description)}
+
+          </p>
+
+
+          <p>
+
+            <b>Trạng thái:</b>
+
+            <span class="status">
+
+              ${esc(
+                x.status || "OPEN"
+              )}
+
+            </span>
+
+          </p>
+
+
+          <button
+            onclick="openCase('${esc(x.case_id)}')">
+
+            🔧 Xem lịch sử xử lý
+
+          </button>
+
+        </article>
+
+      `).join("")}
+
+    `;
 
 
   } catch (error) {
 
-    document.getElementById(
-      "searchResult"
-    ).innerHTML = `
+    console.error(error);
+
+    resultBox.innerHTML = `
 
       <div class="error">
+
+        Không thể tìm kiếm:
 
         ${esc(error.message)}
 
