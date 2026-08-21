@@ -1,35 +1,46 @@
-# DYEING AI WEB V1
+# DYEING AI WEB V2.2
 
-Mục tiêu: cho công nhân nhập Case trước; kỹ thuật viên/AI xử lý dữ liệu về sau.
+V2.2 adds an AI-style Search layer on top of V2.1.
 
-## Chạy ngay
-Mở `index.html`. Không cần server.
-- Nếu chưa cấu hình Supabase: dữ liệu lưu trên trình duyệt hiện tại (Demo Browser Mode).
-- Nếu muốn nhiều máy cùng nhập và cùng thấy dữ liệu: cấu hình Supabase theo phần dưới.
+## What changed
 
-## Đưa lên GitHub Pages
-1. Tạo repository, ví dụ `dyeing-ai-web`.
-2. Upload toàn bộ file trong thư mục này.
-3. Settings → Pages → Deploy from branch → `main` / root.
-4. Mở URL GitHub Pages.
+- Intent Detection:
+  - History
+  - Find effective method
+  - Find failed method
+  - Next-action recommendation
+  - Analysis / root-cause question
+- Scope Detection:
+  - Product
+  - Problem
+  - Batch
+  - Product + Problem
+- Ambiguous scope does NOT default to another product.
+- Multiple matching Cases are shown instead of auto-selecting one.
+- Case Actions are summarized from `case_actions`.
+- Confirmed methods are shown only when `effective = true`.
 
-## Dùng database chung cho công nhân
-1. Tạo project Supabase.
-2. Mở SQL Editor và chạy `supabase/schema.sql`.
-3. Lấy Project URL và Publishable/anon key.
-4. Điền vào `config.js`:
-   SUPABASE_URL: "..."
-   SUPABASE_ANON_KEY: "..."
-5. Commit/push lại GitHub.
+## Important
 
-LƯU Ý:
-- Không bao giờ đưa `service_role` key vào frontend.
-- Schema hiện tại dùng policy demo để test nhanh. Trước khi triển khai thật cần Auth + RLS theo vai trò Worker/Technician/Admin.
-- V1 chưa cho AI tự kết luận nguyên nhân. Đây là hệ thống thu thập dữ liệu sạch trước.
+This V2.2 is an **AI-search prototype**, not an LLM API yet.
+The intent/scope layer is deterministic and evidence-based.
+The next step is optional integration with an LLM API after the search/retrieval layer is stable.
 
-## Roadmap
-V1 Worker input
-V2 Technician treatment/result
-V3 Search + filters
-V4 AI Intent + Scope
-V5 AI history/recommendation
+## Branch
+
+Develop/test on:
+`v2-case-actions`
+
+Keep `main` as the stable branch until approved.
+
+## Local test
+
+Open `index.html` in a browser, or serve the folder with any static server.
+
+## Git
+
+```powershell
+git add index.html app.js style.css README.md
+git commit -m "Add V2.2 AI search and intent detection"
+git push -u origin v2-case-actions
+```

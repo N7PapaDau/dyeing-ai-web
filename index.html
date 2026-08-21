@@ -3,486 +3,152 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Dyeing AI Web V2</title>
+<title>Dyeing AI Web V2.2</title>
 <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
 <header>
   <div>
     <h1>🤖 DYEING AI</h1>
-    <p>Quality Case Collection — V2</p>
+    <p>Case Collection · Action History · AI Search V2.2</p>
   </div>
-
   <nav>
-    <button class="nav active" data-page="new">
-      ➕ Ghi nhận Case
-    </button>
-
-    <button class="nav" data-page="cases">
-      📋 Danh sách Case
-    </button>
-
-    <button class="nav" data-page="search">
-      🔎 Tìm kiếm
-    </button>
+    <button class="nav active" data-page="new">➕ Ghi nhận Case</button>
+    <button class="nav" data-page="cases">📋 Danh sách Case</button>
+    <button class="nav" data-page="search">🤖 AI Search</button>
   </nav>
 </header>
 
-
 <main>
-
-<!-- =========================
-     1. NEW CASE
-========================= -->
-
 <section id="new" class="page active">
-
   <div class="card">
-
     <h2>👷 Ghi nhận mẻ / vấn đề</h2>
-
-    <p class="hint">
-      Công nhân chỉ cần ghi nhận sự việc.
-      Chưa cần xác định nguyên nhân gốc.
-    </p>
-
+    <p class="hint">Công nhân chỉ cần ghi nhận sự việc. Chưa cần xác định nguyên nhân gốc.</p>
     <form id="caseForm">
-
       <div class="grid">
-
-        <label>
-          Mã sản phẩm*
-          <input
-            id="product"
-            required
-            placeholder="Ví dụ: 20726">
-        </label>
-
-
-        <label>
-          Batch*
-          <input
-            id="batch"
-            required
-            placeholder="Ví dụ: 26209997">
-        </label>
-
-
-        <label>
-          Máy*
-          <input
-            id="machine"
-            required
-            placeholder="Ví dụ: Fong's 501">
-        </label>
-
-
-        <label>
-          Ngày*
-          <input
-            id="date"
-            type="date"
-            required>
-        </label>
-
-
-        <label class="full">
-          Vấn đề*
-
+        <label>Mã sản phẩm*<input id="product" required placeholder="Ví dụ: 20726"></label>
+        <label>Batch*<input id="batch" required placeholder="Ví dụ: 26209997"></label>
+        <label>Máy*<input id="machine" required placeholder="Ví dụ: Fong's 501"></label>
+        <label>Ngày*<input id="date" type="date" required></label>
+        <label class="full">Vấn đề*
           <select id="problem" required>
-
-            <option value="">
-              -- Chọn vấn đề --
-            </option>
-
-            <option>
-              Uneven Dyeing
-            </option>
-
-            <option>
-              Color Wrong / Sai màu
-            </option>
-
-            <option>
-              PVA-out
-            </option>
-
-            <option>
-              Cotton Lint / Bụi bông
-            </option>
-
-            <option>
-              Moisture / Độ ẩm
-            </option>
-
-            <option>
-              Other / Khác
-            </option>
-
+            <option value="">-- Chọn vấn đề --</option>
+            <option>Uneven Dyeing</option>
+            <option>Color Wrong / Sai màu</option>
+            <option>PVA-out</option>
+            <option>Cotton Lint / Bụi bông</option>
+            <option>Moisture / Độ ẩm</option>
+            <option>Other / Khác</option>
           </select>
-
         </label>
-
-
-        <label class="full">
-
-          Mô tả ngắn*
-
-          <textarea
-            id="description"
-            required
-            placeholder="Mô tả hiện tượng quan sát được..."></textarea>
-
+        <label class="full">Mô tả ngắn*
+          <textarea id="description" required placeholder="Mô tả hiện tượng quan sát được..."></textarea>
         </label>
-
-
-        <label class="full">
-
-          Hình ảnh
-
-          <input
-            id="photo"
-            type="file"
-            accept="image/*"
-            multiple>
-
+        <label class="full">Hình ảnh
+          <input id="photo" type="file" accept="image/*" multiple>
         </label>
-
       </div>
-
-
-      <button
-        class="primary"
-        type="submit">
-
-        💾 Lưu Case
-
-      </button>
-
-
+      <button class="primary" type="submit">💾 Lưu Case</button>
       <div id="saveMsg"></div>
-
     </form>
-
   </div>
-
 </section>
-
-
-
-<!-- =========================
-     2. CASE LIST
-========================= -->
 
 <section id="cases" class="page">
-
   <div class="card">
-
     <div class="row">
-
       <div>
-
-        <h2>
-          📋 Case đã ghi nhận
-        </h2>
-
-        <p class="hint">
-          Dữ liệu được lưu trên Database chung.
-        </p>
-
+        <h2>📋 Case đã ghi nhận</h2>
+        <p class="hint">Chọn Case để xem toàn bộ lịch sử xử lý.</p>
       </div>
-
-
-      <button onclick="loadCases()">
-        ↻ Làm mới
-      </button>
-
+      <button onclick="loadCases()">↻ Làm mới</button>
     </div>
-
-
     <div id="caseList"></div>
-
   </div>
-
 </section>
-
-
-
-<!-- =========================
-     3. SEARCH
-========================= -->
 
 <section id="search" class="page">
-
-  <div class="card">
-
-    <h2>
-      🔎 Tìm kiếm lịch sử
-    </h2>
-
-
-    <div class="searchbar">
-
-  <input
-    id="searchBox"
-    placeholder="Nhập Product, Problem hoặc Batch...">
-
-  <button onclick="runSearch()">
-    🔎 Tìm Case
-  </button>
-
-</div>
-
-<div id="searchHint" class="hint">
-  Có thể tìm theo mã sản phẩm, vấn đề hoặc Batch.
-</div>
-
-<div id="searchResult"></div>
-
-
-    <div id="searchResult"></div>
-
+  <div class="card ai-card">
+    <h2>🤖 AI Search V2.2</h2>
+    <p class="hint">Xác định mục đích + phạm vi trước khi tìm Case. Không đủ dữ liệu thì hệ thống sẽ hỏi lại, không tự chọn Case.</p>
+    <div class="ai-search">
+      <input id="aiQuery" placeholder="Ví dụ: SCO bị Uneven Dyeing trước đây xử lý thế nào?">
+      <button class="primary" onclick="runAISearch()">🔎 Hỏi AI</button>
+    </div>
+    <div id="aiInterpretation"></div>
+    <div id="aiResult"></div>
   </div>
-
 </section>
-
-
-
-<!-- =========================
-     4. CASE DETAIL
-========================= -->
 
 <section id="caseDetail" class="page">
-
   <div class="card">
-
     <div class="row">
-
       <div>
-
-        <h2>
-          📌 Chi tiết Case
-        </h2>
-
-        <p
-          class="hint"
-          id="detailCaseTitle">
-        </p>
-
+        <h2>📌 Chi tiết Case</h2>
+        <p class="hint" id="detailCaseTitle"></p>
       </div>
-
-
-      <button onclick="showPage('cases')">
-        ← Quay lại
-      </button>
-
+      <button onclick="showPage('cases')">← Quay lại</button>
     </div>
 
-
-    <!-- CASE INFORMATION -->
-
-    <div id="caseInformation">
-
-    </div>
-
-
+    <div id="caseInformation"></div>
     <hr>
 
+    <h2>🔧 Lịch sử xử lý</h2>
+    <p class="hint">Ghi nhận từng lần thử. Không ép người dùng phải kết luận nguyên nhân.</p>
+    <div id="actionList"></div>
 
-    <!-- ACTION HISTORY -->
+    <button class="primary" onclick="openActionForm()">➕ Thêm lần xử lý</button>
 
-    <h2>
-      🔧 Lịch sử xử lý
-    </h2>
-
-
-    <p class="hint">
-
-      Các lần thử nghiệm được ghi nhận theo thời gian.
-      Chưa xác định nguyên nhân thì không cần kết luận nguyên nhân.
-
-    </p>
-
-
-    <div id="actionList">
-
-      <p>
-        Chưa có lần xử lý nào.
-      </p>
-
-    </div>
-
-
-    <button
-      class="primary"
-      onclick="openActionForm()">
-
-      ➕ Thêm lần xử lý
-
-    </button>
-
-
-    <!-- ACTION FORM -->
-
-    <div
-      id="actionFormBox"
-      class="action-form"
-      style="display:none;">
-
+    <div id="actionFormBox" class="action-form" style="display:none;">
       <hr>
-
-
-      <h3>
-        🔧 Ghi nhận lần xử lý
-      </h3>
-
-
+      <h3>🔧 Ghi nhận lần xử lý</h3>
       <form id="actionForm">
-
-
-        <label>
-
-          Phương pháp xử lý*
-
-          <textarea
-            id="actionTreatment"
-            required
-            placeholder="Ví dụ: Tăng muối 5 g/L..."></textarea>
-
+        <label>Phương pháp xử lý*
+          <textarea id="actionTreatment" required placeholder="Ví dụ: Tăng muối 5 g/L..."></textarea>
         </label>
-
-
-        <label>
-
-          Kết quả*
-
-          <select
-            id="actionResult"
-            required>
-
-            <option value="">
-              -- Chọn kết quả --
-            </option>
-
-            <option value="Không đạt">
-              ❌ Không đạt
-            </option>
-
-            <option value="Cải thiện">
-              🟡 Cải thiện
-            </option>
-
-            <option value="Đạt">
-              🟢 Đạt
-            </option>
-
+        <label>Kết quả*
+          <select id="actionResult" required>
+            <option value="">-- Chọn kết quả --</option>
+            <option value="Không đạt">❌ Không đạt</option>
+            <option value="Cải thiện">🟡 Cải thiện</option>
+            <option value="Đạt">🟢 Đạt</option>
           </select>
-
         </label>
-
-
-        <label>
-
-          Ghi chú
-
-          <textarea
-            id="actionNotes"
-            placeholder="Thông tin bổ sung..."></textarea>
-
+        <label>Ghi chú
+          <textarea id="actionNotes" placeholder="Thông tin bổ sung..."></textarea>
         </label>
-
-
-        <label>
-
-          Mẻ xác nhận
-
-          <input
-            id="confirmBatch"
-            placeholder="Chỉ nhập khi đã có mẻ xác nhận">
-
+        <label>Mẻ xác nhận
+          <input id="confirmBatch" placeholder="Chỉ nhập khi đã có mẻ xác nhận">
         </label>
-
 
         <div class="confirmation-box">
-
-  <div class="confirmation-title">
-    ⭐ XÁC NHẬN PHƯƠNG PHÁP XỬ LÝ HIỆU QUẢ
-  </div>
-
-  <label class="confirmation-check">
-
-    <input
-      type="checkbox"
-      id="actionEffective">
-
-    <span>
-      Tôi xác nhận phương pháp này đã đạt yêu cầu
-      trên mẻ xác nhận tiếp theo.
-    </span>
-
-  </label>
-
-  <p class="confirmation-hint">
-    Chỉ tick khi đã kiểm chứng trên mẻ tiếp theo.
-    Không tick nếu kết quả chỉ mới cải thiện.
-  </p>
-
-</div>
-
-
-        <div class="row">
-
-          <button
-            type="submit"
-            class="primary">
-
-            💾 Lưu lần xử lý
-
-          </button>
-
-
-          <button
-            type="button"
-            onclick="closeActionForm()">
-
-            Hủy
-
-          </button>
-
+          <div class="confirmation-title">⭐ XÁC NHẬN PHƯƠNG PHÁP XỬ LÝ HIỆU QUẢ</div>
+          <label class="confirmation-check">
+            <input type="checkbox" id="actionEffective">
+            <span>Tôi xác nhận phương pháp này đã đạt yêu cầu trên mẻ xác nhận tiếp theo.</span>
+          </label>
+          <p class="confirmation-hint">
+            Chỉ tick khi đã kiểm chứng trên mẻ tiếp theo. Không tick nếu kết quả chỉ mới cải thiện.
+          </p>
         </div>
 
-
+        <div class="row action-buttons">
+          <button type="submit" class="primary">💾 Lưu lần xử lý</button>
+          <button type="button" onclick="closeActionForm()">Hủy</button>
+        </div>
         <div id="actionSaveMsg"></div>
-
-
       </form>
-
     </div>
-
   </div>
-
 </section>
-
 </main>
 
-
-
 <footer>
-
-  <span>
-    Dyeing AI Web V2 • Worker → Technician → AI
-  </span>
-
+  <span>Dyeing AI Web V2.2 • Worker → Technician → AI Search</span>
   <span id="mode"></span>
-
 </footer>
-
-
 
 <script src="config.js"></script>
 <script src="app.js"></script>
-
 </body>
 </html>
