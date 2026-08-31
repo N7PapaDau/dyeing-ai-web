@@ -260,6 +260,193 @@ document.getElementById("actionForm").onsubmit=async function(event){
   }
 };
 
+
+
+
+function setAIQuery(value){
+  const input = document.getElementById("aiQuery");
+  if(input){
+    input.value = value;
+    input.focus();
+  }
+}
+
+async function getAllActionsForCases(cases){
+  const map = {};
+  for(const c of cases){
+    try{
+      map[c.case_id] = await getActions(c.case_id);
+    }catch(error){
+      console.error("Action load failed", c.case_id, error);
+      map[c.case_id] = [];
+    }
+  }
+  return map;
+}
+
+function scoreSimilarCase(target, candidate){
+  let score = 0;
+
+  const targetProduct = normalize(target.product_code);
+  const candidateProduct = normalize(candidate.product_code);
+  const targetProblem = normalize(target.problem);
+  const candidateProblem = normalize(candidate.problem);
+  const targetMachine = normalize(target.machine);
+  const candidateMachine = normalize(candidate.machine);
+
+  if(targetProduct && candidateProduct && targetProduct === candidateProduct) score += 60;
+  if(targetProblem && candidateProblem && targetProblem === candidateProblem) score += 30;
+  if(targetMachine && candidateMachine && targetMachine === candidateMachine) score += 10;
+
+  return score;
+}
+
+function getOutcomeBucket(actions){
+  const result = {
+    ng: 0,
+    improved: 0,
+    ok: 0,
+    confirmed: 0
+  };
+
+  for(const a of actions || []){
+    if(a.result === "Không đạt") result.ng++;
+    else if(a.result === "Cải thiện") result.improved++;
+    else if(a.result === "Đạt") result.ok++;
+
+    if(a.effective === true) result.confirmed++;
+  }
+
+  return result;
+}
+
+function buildKnowledgeSummary(target, targetActions, similarRows){
+  const allRows = [target, ...similarRows];
+  const uniqueMap = new Map();
+  for(const c of allRows) uniqueMap.set(c.case_id, c);
+
+  let totalActions = 0;
+  let ng = 0;
+  let improved = 0;
+  let ok = 0;
+  let confirmed = 0;
+  const confirmedMethods = new Map();
+
+  for(const c of uniqueMap.values()){
+    const actions = c.__actions || [];
+    totalActions += actions.length;
+
+    for(const a of actions){
+      if(a.result === "Không đạt") ng++;
+      else if(a.result === "Cải thiện") improved++;
+      else if(a.result === "Đạt") ok++;
+
+      if(a.effective === true){
+        confirmed++;
+        const key = normalize(a.treatment);
+        if(key){
+          const item = confirmedMethods.get(key) || {name:a.treatment, count:0, batches:[]};
+          item.count++;
+          if(a.confirm_batch_no) item.batches.push(a.confirm_batch_no);
+          confirmedMethods.set(key, item);
+        }
+      }
+    }
+  }
+
+  const confirmedList = [...confirmedMethods.values()]
+    .sort((a,b)=>b.count-a.count);
+
+  let guidance = "Chưa có phương pháp nào được xác nhận hiệu quả trong nhóm Case đang xét.";
+  if(confirmedList.length){
+    guidance = "Có phương pháp đã được xác nhận hiệu quả trong lịch sử. Đây là bằng chứng tham khảo, không phải kết luận nguyên nhân gốc.";
+  }
+
+  return {
+    caseCount: uniqueMap.size,
+    actionCount: totalActions,
+    ng,
+    improved,
+    ok,
+    confirmed,
+    confirmedList,
+    guidance
+  };
+}
+
+function renderKnowledgeSummary(summary){
+  const confirmed = summary.confirmedList.length
+    ? summary.confirmedList.map(x => `
+        <div class="similar-card">
+          <b>${esc(x.name)}</b>
+          <br>
+          <span class="hint">Đã xác nhận ${x.count} lần${x.batches.length ? " · Batch: " + esc([...new Set(x.batches)].join(", ")) : ""}</span>
+        </div>
+      `).join("")
+    : '<p class="hint">Chưa có phương pháp xác nhận hiệu quả.</p>';
+
+  return `
+    <div class="knowledge-panel">
+      <div class="knowledge-title">📚 Knowledge Summary V2.4</div>
+      <div class="kpi-row">
+        <span class="kpi">Cases: ${summary.caseCount}</span>
+        <span class="kpi">Actions: ${summary.actionCount}</span>
+        <span class="kpi badge-ng">NG: ${summary.ng}</span>
+        <span class="kpi badge-imp">Cải thiện: ${summary.improved}</span>
+        <span class="kpi badge-ok">Đạt: ${summary.ok}</span>
+        <span class="kpi">⭐ Confirmed: ${summary.confirmed}</span>
+      </div>
+      <p>${esc(summary.guidance)}</p>
+      <h4>⭐ Phương pháp đã được xác nhận</h4>
+      ${confirmed}
+    </div>
+  `;
+}
+
+function renderSimilarCases(target, candidates){
+  if(!candidates.length) return "";
+
+  const cards = candidates.slice(0,8).map(item => {
+    const c = item.caseData;
+    const actions = c.__actions || [];
+    const bucket = getOutcomeBucket(actions);
+    const status = c.status || "OPEN";
+
+    return `
+      <div class="similar-card">
+        <div class="similar-grid">
+          <div>
+            <b>${esc(c.case_id)} — ${esc(c.product_code)}</b>
+            <br>
+            <span class="tag">Batch: ${esc(c.batch_no)}</span>
+            <span class="tag">${esc(c.problem)}</span>
+            <p>${esc(c.description || "")}</p>
+            <div class="kpi-row">
+              <span class="kpi">NG ${bucket.ng}</span>
+              <span class="kpi">Cải thiện ${bucket.improved}</span>
+              <span class="kpi">Đạt ${bucket.ok}</span>
+              <span class="kpi">⭐ Confirmed ${bucket.confirmed}</span>
+            </div>
+          </div>
+          <div>
+            <span class="kpi score">Match ${item.score}%</span>
+            <br><br>
+            <button onclick="openCase('${esc(c.case_id)}')">🔧 Xem Case</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  return `
+    <div class="knowledge-panel">
+      <div class="knowledge-title">🔎 Similar Case</div>
+      <p class="hint">Điểm tương đồng dựa trên Product, Problem và Machine. Chỉ là mức độ tương đồng, không phải kết luận nguyên nhân.</p>
+      ${cards}
+    </div>
+  `;
+}
+
 async function runAISearch(){
   const query=document.getElementById("aiQuery").value.trim();
   const interpretation=document.getElementById("aiInterpretation");
@@ -284,14 +471,13 @@ async function runAISearch(){
 
     interpretation.innerHTML=`
       <div class="interpretation">
-        <b>AI hiểu câu hỏi:</b><br>
+        <b>DYEING AI FREE hiểu câu hỏi:</b><br>
         <span class="chip strong">Intent: ${esc(intent.label)}</span>
         <span class="chip ${scope.scopeType==="UNKNOWN"?"warn":"strong"}">Scope: ${esc(scope.label)}</span>
         ${scope.product?`<span class="chip">Product: ${esc(scope.product)}</span>`:""}
         ${scope.problem?`<span class="chip">Problem: ${esc(scope.problem)}</span>`:""}
         ${scope.batch?`<span class="chip">Batch: ${esc(scope.batch)}</span>`:""}
-      </div>
-    `;
+      </div>`;
 
     if(scope.scopeType==="UNKNOWN"){
       result.innerHTML=`
@@ -311,7 +497,7 @@ async function runAISearch(){
         <div class="ai-answer">
           <div class="ai-title">🔎 Không tìm thấy Case phù hợp</div>
           <p>Phạm vi đã xác định: <b>${esc(scope.label)}</b></p>
-          <p>AI không tự mở rộng sang sản phẩm/Batch khác.</p>
+          <p>DYEING AI FREE không tự mở rộng sang sản phẩm hoặc Batch khác.</p>
         </div>`;
       return;
     }
@@ -335,27 +521,100 @@ async function runAISearch(){
 
     const selected=matches[0];
     const actions=await getActions(selected.case_id);
-    const summary=summarizeActions(actions);
+
+    // V2.4: build a small evidence set of similar Cases
+    // from the already retrieved database records.
+    const scored = allCases
+      .filter(c => c.case_id !== selected.case_id)
+      .map(c => ({
+        caseData: c,
+        score: scoreSimilarCase(selected, c)
+      }))
+      .filter(x => x.score >= 60)
+      .sort((a,b) => b.score - a.score)
+      .slice(0, 8);
+
+    const similarCases = scored.map(x => x.caseData);
+    const actionMap = await getAllActionsForCases([selected, ...similarCases]);
+
+    selected.__actions = actions;
+    similarCases.forEach(c => {
+      c.__actions = actionMap[c.case_id] || [];
+    });
+
+    const summary = buildKnowledgeSummary(
+      selected,
+      actions,
+      similarCases
+    );
+
+    const similarHtml = renderSimilarCases(
+      selected,
+      scored
+    );
+
+    let nextActionText="";
+    if(intent.type==="NEXT_ACTION"){
+      const confirmed=actions.filter(a=>a.effective===true);
+      if(confirmed.length){
+        nextActionText=`<div class="interpretation"><b>⭐ Phương pháp đã được xác nhận:</b><br>${confirmed.map(a=>esc(a.treatment)).join("<br>")}</div>`;
+      }else{
+        nextActionText=`<div class="interpretation"><b>⚠️ Chưa có phương pháp được xác nhận hiệu quả.</b><br>Dữ liệu hiện tại chưa đủ để đưa ra khuyến nghị chắc chắn. Kỹ thuật viên có thể tiếp tục kiểm chứng theo quy trình thực tế.</div>`;
+      }
+    }
+
+    const knowledgeBox = document.getElementById("knowledgeSummary");
+    if(knowledgeBox){
+      knowledgeBox.innerHTML = renderKnowledgeSummary(summary);
+    }
 
     result.innerHTML=`
       <div class="ai-answer">
-        <div class="ai-title">✅ Case được chọn</div>
-        <p><b>${esc(selected.case_id)}</b> — ${esc(selected.product_code)}</p>
-        <span class="metric">Batch: ${esc(selected.batch_no)}</span>
-        <span class="metric">Problem: ${esc(selected.problem)}</span>
-        <span class="metric">Status: ${esc(selected.status || "OPEN")}</span>
+        <div class="ai-title">🤖 DYEING AI FREE V2.4</div>
+
+        <p><b>Case:</b> ${esc(selected.case_id)} — ${esc(selected.product_code)}</p>
+
+        <p>
+          <span class="metric">Batch: ${esc(selected.batch_no)}</span>
+          <span class="metric">Problem: ${esc(selected.problem)}</span>
+          <span class="metric">Status: ${esc(selected.status || "OPEN")}</span>
+        </p>
+
+        <hr>
 
         <h4>📚 Lịch sử xử lý</h4>
-        ${summary.historyHtml || "<p>Chưa có Action được ghi nhận.</p>"}
 
-        <h4>⭐ Phương pháp đã xác nhận</h4>
-        ${summary.confirmedHtml || "<p>Chưa có phương pháp nào được xác nhận hiệu quả.</p>"}
+        ${actions.length ? actions.map(a => `
+          <div class="case">
+            <b>Lần ${esc(a.action_no)}</b> — ${esc(a.treatment)}
+            <br>
+            Kết quả:
+            ${a.result === "Không đạt" ? "❌" : a.result === "Cải thiện" ? "🟡" : a.result === "Đạt" ? "🟢" : "⚪"}
+            ${esc(a.result)}
+            ${a.effective ? `<br><span class="ok">⭐ Đã xác nhận hiệu quả</span>` : ""}
+          </div>
+        `).join("") : "<p>Chưa có Action được ghi nhận.</p>"}
 
-        <h4>🤖 Kết luận từ dữ liệu</h4>
-        <p>${esc(summary.conclusion)}</p>
+        <h4>⭐ Phương pháp đã xác nhận hiệu quả</h4>
+
+        ${summary.confirmedList.length
+          ? summary.confirmedList.map(x => `<div class="case"><b>${esc(x.name)}</b><br><span class="hint">Xác nhận ${x.count} lần${x.batches.length ? " · Batch: " + esc([...new Set(x.batches)].join(", ")) : ""}</span></div>`).join("")
+          : "<p>Chưa có phương pháp nào được xác nhận hiệu quả.</p>"
+        }
+
+        ${nextActionText}
+
+        <p class="hint">
+          V2.4 FREE: Similar Case + Knowledge Summary được tính trực tiếp từ dữ liệu Supabase.
+          Không dùng OpenAI API, không dùng Edge Function.
+        </p>
 
         <button onclick="openCase('${esc(selected.case_id)}')">🔧 Mở Case đầy đủ</button>
-      </div>`;
+      </div>
+
+      ${similarHtml}
+    `;
+
   }catch(error){
     console.error(error);
     result.innerHTML=`<div class="error">Không thể tra cứu: ${esc(error.message)}</div>`;

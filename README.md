@@ -44,3 +44,11 @@ git add index.html app.js style.css README.md
 git commit -m "Add V2.2 AI search and intent detection"
 git push -u origin v2-case-actions
 ```
+
+## V2.3 FREE
+
+This version does not use OpenAI API or Supabase Edge Functions. It uses the deterministic V2.2 retrieval layer plus evidence-based summaries directly in the browser. No API key is required.
+
+
+## V2.4 FREE
+Adds Similar Case retrieval and Knowledge Summary without any external AI API.

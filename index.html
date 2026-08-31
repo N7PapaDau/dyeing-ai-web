@@ -59,7 +59,7 @@
     <div class="row">
       <div>
         <h2>📋 Case đã ghi nhận</h2>
-        <p class="hint">Chọn Case để xem toàn bộ lịch sử xử lý.</p>
+        <p class="hint">Chọn Case để xem toàn bộ lịch sử xử lý. V2.4 thêm Similar Case + Knowledge Summary trong AI Search.</p>
       </div>
       <button onclick="loadCases()">↻ Làm mới</button>
     </div>
@@ -75,6 +75,15 @@
       <input id="aiQuery" placeholder="Ví dụ: SCO bị Uneven Dyeing trước đây xử lý thế nào?">
       <button class="primary" onclick="runAISearch()">🔎 Hỏi AI</button>
     </div>
+
+    <div class="quick-search">
+      <button onclick="setAIQuery('20726')">20726</button>
+      <button onclick="setAIQuery('SCO')">SCO</button>
+      <button onclick="setAIQuery('Uneven Dyeing')">Uneven Dyeing</button>
+      <button onclick="setAIQuery('26209997')">Batch 26209997</button>
+    </div>
+
+    <div id="knowledgeSummary"></div>
     <div id="aiInterpretation"></div>
     <div id="aiResult"></div>
   </div>
