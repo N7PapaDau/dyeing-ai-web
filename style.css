@@ -103,7 +103,7 @@ footer{max-width:1120px;margin:20px auto;padding:0 16px;color:#64748b;font-size:
 
 .dashboard-analytics-grid{
   display:grid;
-  grid-template-columns:1fr 1fr;
+  grid-template-columns:repeat(3,1fr);
   gap:16px;
 }
 

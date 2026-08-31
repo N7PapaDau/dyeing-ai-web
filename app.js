@@ -794,6 +794,7 @@ const confirmedCases = confirmedCaseIds.size;
     const ngActions = actions.filter(x => x.result === "Không đạt").length;
 const improvedActions = actions.filter(x => x.result === "Cải thiện").length;
 const passedActions = actions.filter(x => x.result === "Đạt").length;
+const productCounts = {};
 const problemCounts = {};
 const machineCounts = {};
 
@@ -818,14 +819,17 @@ function normalizeMachineLabel(value){
 }
 
 cases.forEach(x => {
+  const product = (x.product_code || "Chưa xác định").trim();
   const problem = (x.problem || "Chưa xác định").trim();
   const machine = normalizeMachineLabel(x.machine);
 
+  productCounts[product] = (productCounts[product] || 0) + 1;
   problemCounts[problem] = (problemCounts[problem] || 0) + 1;
   machineCounts[machine] = (machineCounts[machine] || 0) + 1;
 });
-
-const topProblems = Object.entries(problemCounts)
+  const topProducts = Object.entries(productCounts)
+  .sort((a,b) => b[1] - a[1]);
+  const topProblems = Object.entries(problemCounts)
   .sort((a,b) => b[1] - a[1]);
 
 const topMachines = Object.entries(machineCounts)
@@ -836,6 +840,19 @@ casesBox.innerHTML = `
     <h3>📋 Phân tích Case</h3>
 
     <div class="dashboard-analytics-grid">
+<div class="dashboard-list">
+  <h4>🧵 Product</h4>
+  ${
+    topProducts.length
+      ? topProducts.map(([name,count]) => `
+          <div class="dashboard-list-row">
+            <span>${esc(name)}</span>
+            <b>${count}</b>
+          </div>
+        `).join("")
+      : `<p class="hint">Chưa có dữ liệu.</p>`
+  }
+</div>
       <div class="dashboard-list">
         <h4>⚠️ Problem</h4>
         ${
