@@ -773,13 +773,39 @@ async function loadDashboard(){
         }catch{}
       }
     }
+function normalizeMachineLabel(value){
+  const raw = (value || "").trim();
+
+  if(!raw){
+    return "Chưa xác định";
+  }
+
+  const compact = raw
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  const match = compact.match(/^([A-Z]+)(\d+)$/);
+
+  if(match){
+    return `${match[1]} ${match[2]}`;
+  }
+
+  return raw;
+}
 const productOptions = [...new Set(
   cases
     .map(x => (x.product_code || "").trim())
     .filter(Boolean)
 )].sort();
+const machineOptions = [...new Set(
+  cases
+    .map(x => normalizeMachineLabel(x.machine))
+    .filter(Boolean)
+)].sort();
   const selectedProduct =
   document.getElementById("dashboardProductFilter")?.value || "";
+  const selectedMachine =
+  document.getElementById("dashboardMachineFilter")?.value || "";
 
 filtersBox.innerHTML = `
   <div class="dashboard-filter-bar">
@@ -792,9 +818,18 @@ filtersBox.innerHTML = `
         `).join("")}
       </select>
     </label>
+
+    <label>
+      Machine
+      <select id="dashboardMachineFilter">
+        <option value="">Tất cả Machine</option>
+        ${machineOptions.map(value => `
+          <option value="${esc(value)}">${esc(value)}</option>
+        `).join("")}
+      </select>
+    </label>
   </div>
 `;
-
 const productFilter = document.getElementById("dashboardProductFilter");
 
 productFilter.value = selectedProduct;
@@ -802,9 +837,24 @@ productFilter.value = selectedProduct;
 productFilter.onchange = () => {
   loadDashboard();
 };
-const filteredCases = selectedProduct
-  ? cases.filter(x => (x.product_code || "").trim() === selectedProduct)
-  : cases;
+const machineFilter = document.getElementById("dashboardMachineFilter");
+
+machineFilter.value = selectedMachine;
+
+machineFilter.onchange = () => {
+  loadDashboard();
+};
+const filteredCases = cases.filter(x => {
+  const matchProduct =
+    !selectedProduct ||
+    (x.product_code || "").trim() === selectedProduct;
+
+  const matchMachine =
+    !selectedMachine ||
+    normalizeMachineLabel(x.machine) === selectedMachine;
+
+  return matchProduct && matchMachine;
+});
 
 const filteredCaseIds = new Set(
   filteredCases.map(x => x.case_id)
