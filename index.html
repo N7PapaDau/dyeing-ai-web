@@ -16,6 +16,7 @@
     <button class="nav active" data-page="new">➕ Ghi nhận Case</button>
     <button class="nav" data-page="cases">📋 Danh sách Case</button>
     <button class="nav" data-page="search">🤖 AI Search</button>
+    <button class="nav" data-page="dashboard">📊 Dashboard</button>
   </nav>
 </header>
 
@@ -86,6 +87,21 @@
     <div id="knowledgeSummary"></div>
     <div id="aiInterpretation"></div>
     <div id="aiResult"></div>
+  </div>
+</section>
+<section id="dashboard" class="page">
+  <div class="card">
+    <div class="row">
+      <div>
+        <h2>📊 Dashboard V2.5</h2>
+        <p class="hint">Tổng hợp dữ liệu từ Case và lịch sử xử lý hiện có.</p>
+      </div>
+      <button onclick="loadDashboard()">↻ Làm mới</button>
+    </div>
+
+    <div id="dashboardSummary"></div>
+    <div id="dashboardCases"></div>
+    <div id="dashboardActions"></div>
   </div>
 </section>
 

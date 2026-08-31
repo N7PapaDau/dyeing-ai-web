@@ -13,6 +13,7 @@ document.querySelectorAll(".nav").forEach(button => {
   button.onclick = () => {
     showPage(button.dataset.page);
     if (button.dataset.page === "cases") loadCases();
+    if (button.dataset.page === "dashboard") loadDashboard();
   };
 });
 
@@ -744,3 +745,173 @@ function esc(value){
 }
 
 loadCases();
+async function loadDashboard(){
+  const summary = document.getElementById("dashboardSummary");
+  const casesBox = document.getElementById("dashboardCases");
+  const actionsBox = document.getElementById("dashboardActions");
+
+  summary.innerHTML = "Đang tải Dashboard...";
+  casesBox.innerHTML = "";
+  actionsBox.innerHTML = "";
+
+  try{
+    const cases = isSupabase
+      ? await supa("dyeing_cases?select=*&order=created_at.desc")
+      : localGet();
+
+    let actions = [];
+
+    if(isSupabase){
+      actions = await supa("case_actions?select=*&order=created_at.desc");
+    }else{
+      for(const item of cases){
+        const key = "dyeing_ai_actions_v2_" + item.case_id;
+        try{
+          const rows = JSON.parse(localStorage.getItem(key) || "[]");
+          actions.push(...rows);
+        }catch{}
+      }
+    }
+
+    const totalCases = cases.length;
+    const confirmedCaseIds = new Set(
+  actions
+    .filter(x => x.effective === true)
+    .map(x => x.case_id)
+    .filter(Boolean)
+);
+
+cases
+  .filter(x => x.status === "CONFIRMED")
+  .forEach(x => confirmedCaseIds.add(x.case_id));
+
+const confirmedCases = confirmedCaseIds.size;
+    const openCases = cases.filter(
+  x => !confirmedCaseIds.has(x.case_id)
+).length;
+    const totalActions = actions.length;
+    const effectiveActions = actions.filter(x => x.effective === true).length;
+    const ngActions = actions.filter(x => x.result === "Không đạt").length;
+const improvedActions = actions.filter(x => x.result === "Cải thiện").length;
+const passedActions = actions.filter(x => x.result === "Đạt").length;
+const problemCounts = {};
+const machineCounts = {};
+
+cases.forEach(x => {
+  const problem = (x.problem || "Chưa xác định").trim();
+  const machine = (x.machine || "Chưa xác định").trim();
+
+  problemCounts[problem] = (problemCounts[problem] || 0) + 1;
+  machineCounts[machine] = (machineCounts[machine] || 0) + 1;
+});
+
+const topProblems = Object.entries(problemCounts)
+  .sort((a,b) => b[1] - a[1]);
+
+const topMachines = Object.entries(machineCounts)
+  .sort((a,b) => b[1] - a[1]);
+
+casesBox.innerHTML = `
+  <div class="dashboard-section">
+    <h3>📋 Phân tích Case</h3>
+
+    <div class="dashboard-analytics-grid">
+      <div class="dashboard-list">
+        <h4>⚠️ Problem</h4>
+        ${
+          topProblems.length
+            ? topProblems.map(([name,count]) => `
+                <div class="dashboard-list-row">
+                  <span>${esc(name)}</span>
+                  <b>${count}</b>
+                </div>
+              `).join("")
+            : `<p class="hint">Chưa có dữ liệu.</p>`
+        }
+      </div>
+
+      <div class="dashboard-list">
+        <h4>🏭 Machine</h4>
+        ${
+          topMachines.length
+            ? topMachines.map(([name,count]) => `
+                <div class="dashboard-list-row">
+                  <span>${esc(name)}</span>
+                  <b>${count}</b>
+                </div>
+              `).join("")
+            : `<p class="hint">Chưa có dữ liệu.</p>`
+        }
+      </div>
+    </div>
+  </div>
+`;
+actionsBox.innerHTML = `
+  <div class="dashboard-section">
+    <h3>🔧 Kết quả xử lý</h3>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-stat">
+        <b>❌ Không đạt</b>
+        <strong>${ngActions}</strong>
+      </div>
+
+      <div class="dashboard-stat">
+        <b>🟡 Cải thiện</b>
+        <strong>${improvedActions}</strong>
+      </div>
+
+      <div class="dashboard-stat">
+        <b>🟢 Đạt</b>
+        <strong>${passedActions}</strong>
+      </div>
+
+      <div class="dashboard-stat">
+        <b>⭐ Effective</b>
+        <strong>${effectiveActions}</strong>
+      </div>
+    </div>
+  </div>
+`;
+    const confirmedRate = totalCases
+      ? Math.round((confirmedCases / totalCases) * 100)
+      : 0;
+
+    summary.innerHTML = `
+      <div class="dashboard-grid">
+        <div class="dashboard-stat">
+          <b>Tổng Case</b>
+          <strong>${totalCases}</strong>
+        </div>
+
+        <div class="dashboard-stat">
+          <b>OPEN</b>
+          <strong>${openCases}</strong>
+        </div>
+
+        <div class="dashboard-stat">
+          <b>CONFIRMED</b>
+          <strong>${confirmedCases}</strong>
+        </div>
+
+        <div class="dashboard-stat">
+          <b>Tổng Action</b>
+          <strong>${totalActions}</strong>
+        </div>
+
+        <div class="dashboard-stat">
+          <b>Effective</b>
+          <strong>${effectiveActions}</strong>
+        </div>
+
+        <div class="dashboard-stat">
+          <b>Tỷ lệ Confirmed</b>
+          <strong>${confirmedRate}%</strong>
+        </div>
+      </div>
+    `;
+  }catch(error){
+    console.error(error);
+    summary.innerHTML = `<div class="error">${esc(error.message)}</div>`;
+  }
+}
