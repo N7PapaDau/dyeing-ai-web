@@ -797,9 +797,29 @@ const passedActions = actions.filter(x => x.result === "Đạt").length;
 const problemCounts = {};
 const machineCounts = {};
 
+function normalizeMachineLabel(value){
+  const raw = (value || "").trim();
+
+  if(!raw){
+    return "Chưa xác định";
+  }
+
+  const compact = raw
+    .toUpperCase()
+    .replace(/\s+/g, "");
+
+  const match = compact.match(/^([A-Z]+)(\d+)$/);
+
+  if(match){
+    return `${match[1]} ${match[2]}`;
+  }
+
+  return raw;
+}
+
 cases.forEach(x => {
   const problem = (x.problem || "Chưa xác định").trim();
-  const machine = (x.machine || "Chưa xác định").trim();
+  const machine = normalizeMachineLabel(x.machine);
 
   problemCounts[problem] = (problemCounts[problem] || 0) + 1;
   machineCounts[machine] = (machineCounts[machine] || 0) + 1;
