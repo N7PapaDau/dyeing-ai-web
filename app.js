@@ -747,6 +747,7 @@ function esc(value){
 loadCases();
 async function loadDashboard(){
   const summary = document.getElementById("dashboardSummary");
+  const filtersBox = document.getElementById("dashboardFilters");
   const casesBox = document.getElementById("dashboardCases");
   const actionsBox = document.getElementById("dashboardActions");
 
@@ -772,31 +773,69 @@ async function loadDashboard(){
         }catch{}
       }
     }
+const productOptions = [...new Set(
+  cases
+    .map(x => (x.product_code || "").trim())
+    .filter(Boolean)
+)].sort();
+  const selectedProduct =
+  document.getElementById("dashboardProductFilter")?.value || "";
 
-    const totalCases = cases.length;
-    const confirmedCaseIds = new Set(
-  actions
+filtersBox.innerHTML = `
+  <div class="dashboard-filter-bar">
+    <label>
+      Product
+      <select id="dashboardProductFilter">
+        <option value="">Tất cả Product</option>
+        ${productOptions.map(value => `
+          <option value="${esc(value)}">${esc(value)}</option>
+        `).join("")}
+      </select>
+    </label>
+  </div>
+`;
+
+const productFilter = document.getElementById("dashboardProductFilter");
+
+productFilter.value = selectedProduct;
+
+productFilter.onchange = () => {
+  loadDashboard();
+};
+const filteredCases = selectedProduct
+  ? cases.filter(x => (x.product_code || "").trim() === selectedProduct)
+  : cases;
+
+const filteredCaseIds = new Set(
+  filteredCases.map(x => x.case_id)
+);
+
+const filteredActions = actions.filter(
+  x => filteredCaseIds.has(x.case_id)
+);
+const totalCases = filteredCases.length;
+const confirmedCaseIds = new Set(
+  filteredActions
     .filter(x => x.effective === true)
     .map(x => x.case_id)
     .filter(Boolean)
 );
-
-cases
+filteredCases
   .filter(x => x.status === "CONFIRMED")
   .forEach(x => confirmedCaseIds.add(x.case_id));
 
 const confirmedCases = confirmedCaseIds.size;
-    const openCases = cases.filter(
+    const openCases = filteredCases.filter(
   x => !confirmedCaseIds.has(x.case_id)
 ).length;
-    const totalActions = actions.length;
-    const effectiveActions = actions.filter(x => x.effective === true).length;
-    const ngActions = actions.filter(x => x.result === "Không đạt").length;
-const improvedActions = actions.filter(x => x.result === "Cải thiện").length;
-const passedActions = actions.filter(x => x.result === "Đạt").length;
-const productCounts = {};
-const problemCounts = {};
-const machineCounts = {};
+    const totalActions = filteredActions.length;
+    const effectiveActions = filteredActions.filter(x => x.effective === true).length;
+    const ngActions = filteredActions.filter(x => x.result === "Không đạt").length;
+    const improvedActions = filteredActions.filter(x => x.result === "Cải thiện").length;
+    const passedActions = filteredActions.filter(x => x.result === "Đạt").length;
+    const productCounts = {};
+    const problemCounts = {};
+    const machineCounts = {};
 
 function normalizeMachineLabel(value){
   const raw = (value || "").trim();
@@ -818,7 +857,7 @@ function normalizeMachineLabel(value){
   return raw;
 }
 
-cases.forEach(x => {
+filteredCases.forEach(x => {
   const product = (x.product_code || "Chưa xác định").trim();
   const problem = (x.problem || "Chưa xác định").trim();
   const machine = normalizeMachineLabel(x.machine);
