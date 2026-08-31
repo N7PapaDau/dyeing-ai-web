@@ -447,7 +447,7 @@ function renderSimilarCases(target, candidates){
   `;
 }
 
-async function runAISearch(){
+async function runAISearch(selectedCaseId=null){
   const query=document.getElementById("aiQuery").value.trim();
   const interpretation=document.getElementById("aiInterpretation");
   const result=document.getElementById("aiResult");
@@ -502,24 +502,34 @@ async function runAISearch(){
       return;
     }
 
-    if(matches.length>1 && !scope.batch){
-      result.innerHTML=`
-        <div class="ai-answer">
-          <div class="ai-title">📋 Có ${matches.length} Case phù hợp</div>
-          <p>Chưa có Batch cụ thể. Hãy chọn Case bạn muốn xem.</p>
-          ${matches.map(x=>`
-            <article class="case">
-              <h3>${esc(x.case_id)} — ${esc(x.product_code)}</h3>
-              <span class="tag">Batch: ${esc(x.batch_no)}</span>
-              <span class="tag">${esc(x.problem)}</span>
-              <p>${esc(x.description)}</p>
-              <button onclick="openCase('${esc(x.case_id)}')">🔧 Xem lịch sử xử lý</button>
-            </article>`).join("")}
-        </div>`;
-      return;
-    }
+   if(matches.length>1 && !scope.batch && !selectedCaseId){
+  result.innerHTML=`
+    <div class="ai-answer">
+      <div class="ai-title">📋 Có ${matches.length} Case phù hợp</div>
+      <p>Chưa có Batch cụ thể. Hãy chọn Case bạn muốn phân tích.</p>
+      ${matches.map(x=>`
+        <article class="case">
+          <h3>${esc(x.case_id)} — ${esc(x.product_code)}</h3>
+          <span class="tag">Batch: ${esc(x.batch_no)}</span>
+          <span class="tag">${esc(x.problem)}</span>
+          <p>${esc(x.description)}</p>
+          <button onclick="runAISearch('${esc(x.case_id)}')">🤖 Phân tích Case này</button>
+        </article>`).join("")}
+    </div>`;
+  return;
+}
 
-    const selected=matches[0];
+const selected = selectedCaseId
+  ? matches.find(x => x.case_id === selectedCaseId)
+  : matches[0];
+
+if(!selected){
+  result.innerHTML=`
+    <div class="ai-answer">
+      <div class="ai-title">⚠️ Không tìm thấy Case đã chọn</div>
+    </div>`;
+  return;
+}
     const actions=await getActions(selected.case_id);
 
     // V2.4: build a small evidence set of similar Cases
@@ -654,21 +664,40 @@ function parseScope(query,cases){
     if(normalize(p) && n.includes(normalize(p))) { problem=p; break; }
   }
 
-  if(batch){
-    return {scopeType:"BATCH",label:`Batch ${batch}`,batch,product,problem};
-  }
-  if(product && problem){
-    return {scopeType:"PRODUCT_PROBLEM",label:`${product} + ${problem}`,product,problem};
-  }
-  if(product){
-    return {scopeType:"PRODUCT",label:`Product ${product}`,product};
-  }
-  if(problem){
-    return {scopeType:"PROBLEM",label:`Problem ${problem}`,problem};
-  }
-  return {scopeType:"UNKNOWN",label:"Chưa xác định"};
+if(product && problem){
+  return {
+    scopeType:"PRODUCT_PROBLEM",
+    label:`${product} + ${problem}`,
+    product,
+    problem
+  };
 }
 
+if(product){
+  return {
+    scopeType:"PRODUCT",
+    label:`Product ${product}`,
+    product
+  };
+}
+
+if(batch){
+  return {
+    scopeType:"BATCH",
+    label:`Batch ${batch}`,
+    batch
+  };
+}
+
+if(problem){
+  return {
+    scopeType:"PROBLEM",
+    label:`Problem ${problem}`,
+    problem
+  };
+}
+  return {scopeType:"UNKNOWN",label:"Chưa xác định"};
+}
 function filterCasesByScope(cases,scope){
   return cases.filter(x=>{
     if(scope.batch && String(x.batch_no).toLowerCase()!==scope.batch.toLowerCase()) return false;
