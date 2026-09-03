@@ -1003,21 +1003,35 @@ if(eventDate){
   .sort((a,b) => b[1] - a[1]);
   const caseTrend = Object.entries(casesByDate)
   .sort((a, b) => a[0].localeCompare(b[0]));
+  const maxTrendCount = Math.max(
+  1,
+  ...caseTrend.map(([, count]) => count)
+);
 casesBox.innerHTML = `
   <div class="dashboard-section">
-    <h3>📋 Phân tích Case</h3>
-<div class="dashboard-section">
   <h3>📈 Xu hướng Case theo ngày</h3>
 
   <div class="dashboard-list">
     ${
       caseTrend.length
-        ? caseTrend.map(([date,count]) => `
-          <div class="dashboard-list-row">
-            <span>${esc(date)}</span>
-            <b>${count}</b>
+        ? `
+          <div class="dashboard-trend">
+            ${caseTrend.map(([date,count]) => `
+              <div class="dashboard-trend-row">
+                <span class="dashboard-trend-date">${esc(date)}</span>
+
+                <div class="dashboard-trend-track">
+                  <div
+                    class="dashboard-trend-bar"
+                    style="width:${Math.round((count / maxTrendCount) * 100)}%"
+                  ></div>
+                </div>
+
+                <span class="dashboard-trend-count">${count}</span>
+              </div>
+            `).join("")}
           </div>
-        `).join("")
+        `
         : `<p class="hint">Chưa có dữ liệu.</p>`
     }
   </div>

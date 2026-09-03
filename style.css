@@ -145,3 +145,48 @@ footer{max-width:1120px;margin:20px auto;padding:0 16px;color:#64748b;font-size:
     grid-template-columns:1fr;
   }
 }
+/* V2.5 Daily Case Trend */
+.dashboard-trend{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.dashboard-trend-row{
+  display:grid;
+  grid-template-columns:110px 1fr 42px;
+  align-items:center;
+  gap:12px;
+}
+
+.dashboard-trend-date{
+  font-size:13px;
+  color:#64748b;
+}
+
+.dashboard-trend-track{
+  height:14px;
+  background:#eef2f7;
+  border-radius:999px;
+  overflow:hidden;
+}
+
+.dashboard-trend-bar{
+  height:100%;
+  background:#2563eb;
+  border-radius:999px;
+  min-width:4px;
+}
+
+.dashboard-trend-count{
+  text-align:right;
+  font-weight:700;
+  color:#172033;
+}
+
+@media(max-width:700px){
+  .dashboard-trend-row{
+    grid-template-columns:90px 1fr 32px;
+    gap:8px;
+  }
+}
