@@ -959,6 +959,7 @@ const confirmedCases = confirmedCaseIds.size;
     const problemCounts = {};
     const machineCounts = {};
     const casesByDate = {};
+    const confirmedCasesByDate = {};
 
 function normalizeMachineLabel(value){
   const raw = (value || "").trim();
@@ -985,7 +986,13 @@ filteredCases.forEach(x => {
   const problem = (x.problem || "Chưa xác định").trim();
   const machine = normalizeMachineLabel(x.machine);
   const eventDate = (x.event_date || "").trim();
-
+if(
+  eventDate &&
+  confirmedCaseIds.has(x.case_id)
+){
+  confirmedCasesByDate[eventDate] =
+    (confirmedCasesByDate[eventDate] || 0) + 1;
+}
 if(eventDate){
   casesByDate[eventDate] = (casesByDate[eventDate] || 0) + 1;
 }
@@ -1003,12 +1010,26 @@ if(eventDate){
   .sort((a,b) => b[1] - a[1]);
   const caseTrend = Object.entries(casesByDate)
   .sort((a, b) => a[0].localeCompare(b[0]));
+  const confirmedTrend = caseTrend.map(([date, total]) => {
+  const confirmed = confirmedCasesByDate[date] || 0;
+  const rate = total
+    ? Math.round((confirmed / total) * 100)
+    : 0;
+
+  return {
+    date,
+    total,
+    confirmed,
+    rate
+  };
+});
+  const maxConfirmedRate = 100;
   const maxTrendCount = Math.max(
   1,
   ...caseTrend.map(([, count]) => count)
 );
 casesBox.innerHTML = `
-  <div class="dashboard-section">
+ <div class="dashboard-section">
   <h3>📈 Xu hướng Case theo ngày</h3>
 
   <div class="dashboard-list">
@@ -1036,7 +1057,39 @@ casesBox.innerHTML = `
     }
   </div>
 </div>
-    <div class="dashboard-analytics-grid">
+
+<div class="dashboard-section">
+  <h3>✅ Tỷ lệ Confirmed theo ngày</h3>
+
+  <div class="dashboard-list">
+    ${
+      confirmedTrend.length
+        ? `
+          <div class="dashboard-trend">
+            ${confirmedTrend.map(item => `
+              <div class="dashboard-trend-row">
+                <span class="dashboard-trend-date">${esc(item.date)}</span>
+
+                <div class="dashboard-trend-track">
+                  <div
+                    class="dashboard-trend-bar"
+                    style="width:${item.rate}%"
+                  ></div>
+                </div>
+
+                <span class="dashboard-trend-count">
+                  ${item.confirmed}/${item.total} (${item.rate}%)
+                </span>
+              </div>
+            `).join("")}
+          </div>
+        `
+        : `<p class="hint">Chưa có dữ liệu.</p>`
+    }
+  </div>
+</div>
+
+<div class="dashboard-analytics-grid">
 <div class="dashboard-list">
   <h4>🧵 Product</h4>
   ${
