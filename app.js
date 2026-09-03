@@ -813,6 +813,10 @@ const problemOptions = [...new Set(
   document.getElementById("dashboardMachineFilter")?.value || "";
   const selectedProblem =
   document.getElementById("dashboardProblemFilter")?.value || "";
+  const selectedDateFrom =
+  document.getElementById("dashboardDateFrom")?.value || "";
+  const selectedDateTo =
+  document.getElementById("dashboardDateTo")?.value || "";
 filtersBox.innerHTML = `
   <div class="dashboard-filter-bar">
     <label>
@@ -843,6 +847,23 @@ filtersBox.innerHTML = `
     `).join("")}
   </select>
 </label>
+<label>
+  Từ ngày
+  <input
+    type="date"
+    id="dashboardDateFrom"
+    value="${esc(selectedDateFrom)}"
+  >
+</label>
+
+<label>
+  Đến ngày
+  <input
+    type="date"
+    id="dashboardDateTo"
+    value="${esc(selectedDateTo)}"
+  >
+</label>
   </div>
 `;
 const productFilter = document.getElementById("dashboardProductFilter");
@@ -866,6 +887,16 @@ problemFilter.value = selectedProblem;
 problemFilter.onchange = () => {
   loadDashboard();
 };
+const dateFromFilter = document.getElementById("dashboardDateFrom");
+const dateToFilter = document.getElementById("dashboardDateTo");
+
+dateFromFilter.onchange = () => {
+  loadDashboard();
+};
+
+dateToFilter.onchange = () => {
+  loadDashboard();
+};
 const filteredCases = cases.filter(x => {
   const matchProduct =
     !selectedProduct ||
@@ -879,7 +910,23 @@ const filteredCases = cases.filter(x => {
     !selectedProblem ||
     (x.problem || "").trim() === selectedProblem;
 
-  return matchProduct && matchMachine && matchProblem;
+  const eventDate = (x.event_date || "").trim();
+
+  const matchDateFrom =
+    !selectedDateFrom ||
+    (eventDate && eventDate >= selectedDateFrom);
+
+  const matchDateTo =
+    !selectedDateTo ||
+    (eventDate && eventDate <= selectedDateTo);
+
+  return (
+    matchProduct &&
+    matchMachine &&
+    matchProblem &&
+    matchDateFrom &&
+    matchDateTo
+  );
 });
 const filteredCaseIds = new Set(
   filteredCases.map(x => x.case_id)
