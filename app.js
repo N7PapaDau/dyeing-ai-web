@@ -958,6 +958,7 @@ const confirmedCases = confirmedCaseIds.size;
     const productCounts = {};
     const problemCounts = {};
     const machineCounts = {};
+    const casesByDate = {};
 
 function normalizeMachineLabel(value){
   const raw = (value || "").trim();
@@ -983,6 +984,11 @@ filteredCases.forEach(x => {
   const product = (x.product_code || "Chưa xác định").trim();
   const problem = (x.problem || "Chưa xác định").trim();
   const machine = normalizeMachineLabel(x.machine);
+  const eventDate = (x.event_date || "").trim();
+
+if(eventDate){
+  casesByDate[eventDate] = (casesByDate[eventDate] || 0) + 1;
+}
 
   productCounts[product] = (productCounts[product] || 0) + 1;
   problemCounts[problem] = (problemCounts[problem] || 0) + 1;
@@ -993,13 +999,29 @@ filteredCases.forEach(x => {
   const topProblems = Object.entries(problemCounts)
   .sort((a,b) => b[1] - a[1]);
 
-const topMachines = Object.entries(machineCounts)
+  const topMachines = Object.entries(machineCounts)
   .sort((a,b) => b[1] - a[1]);
-
+  const caseTrend = Object.entries(casesByDate)
+  .sort((a, b) => a[0].localeCompare(b[0]));
 casesBox.innerHTML = `
   <div class="dashboard-section">
     <h3>📋 Phân tích Case</h3>
+<div class="dashboard-section">
+  <h3>📈 Xu hướng Case theo ngày</h3>
 
+  <div class="dashboard-list">
+    ${
+      caseTrend.length
+        ? caseTrend.map(([date,count]) => `
+          <div class="dashboard-list-row">
+            <span>${esc(date)}</span>
+            <b>${count}</b>
+          </div>
+        `).join("")
+        : `<p class="hint">Chưa có dữ liệu.</p>`
+    }
+  </div>
+</div>
     <div class="dashboard-analytics-grid">
 <div class="dashboard-list">
   <h4>🧵 Product</h4>
