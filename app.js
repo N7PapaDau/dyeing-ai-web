@@ -802,11 +802,17 @@ const machineOptions = [...new Set(
     .map(x => normalizeMachineLabel(x.machine))
     .filter(Boolean)
 )].sort();
+const problemOptions = [...new Set(
+  cases
+    .map(x => (x.problem || "").trim())
+    .filter(Boolean)
+)].sort();
   const selectedProduct =
   document.getElementById("dashboardProductFilter")?.value || "";
   const selectedMachine =
   document.getElementById("dashboardMachineFilter")?.value || "";
-
+  const selectedProblem =
+  document.getElementById("dashboardProblemFilter")?.value || "";
 filtersBox.innerHTML = `
   <div class="dashboard-filter-bar">
     <label>
@@ -828,6 +834,15 @@ filtersBox.innerHTML = `
         `).join("")}
       </select>
     </label>
+<label>
+  Problem
+  <select id="dashboardProblemFilter">
+    <option value="">Tất cả Problem</option>
+    ${problemOptions.map(value => `
+      <option value="${esc(value)}">${esc(value)}</option>
+    `).join("")}
+  </select>
+</label>
   </div>
 `;
 const productFilter = document.getElementById("dashboardProductFilter");
@@ -844,6 +859,13 @@ machineFilter.value = selectedMachine;
 machineFilter.onchange = () => {
   loadDashboard();
 };
+const problemFilter = document.getElementById("dashboardProblemFilter");
+
+problemFilter.value = selectedProblem;
+
+problemFilter.onchange = () => {
+  loadDashboard();
+};
 const filteredCases = cases.filter(x => {
   const matchProduct =
     !selectedProduct ||
@@ -853,9 +875,12 @@ const filteredCases = cases.filter(x => {
     !selectedMachine ||
     normalizeMachineLabel(x.machine) === selectedMachine;
 
-  return matchProduct && matchMachine;
-});
+  const matchProblem =
+    !selectedProblem ||
+    (x.problem || "").trim() === selectedProblem;
 
+  return matchProduct && matchMachine && matchProblem;
+});
 const filteredCaseIds = new Set(
   filteredCases.map(x => x.case_id)
 );
